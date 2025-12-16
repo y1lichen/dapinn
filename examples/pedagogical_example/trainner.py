@@ -56,7 +56,7 @@ def pretrain(config, workdir):
             best_loss = loss.item()
             save_checkpoint({
                 "epoch": epoch,
-                "model_state_dict": model.state_dict(),
+                "model_state_dict": model.state_dict(), # deep copy
                 "loss": loss.item()
             }, save_root, epoch, keep=1, name="best_model.pt")
 
