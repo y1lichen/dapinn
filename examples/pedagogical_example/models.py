@@ -18,7 +18,7 @@ class Pedagogical(BasePinns):
         T = p["T"]
         self.t_col = torch.linspace(0, T, 1000).reshape(-1, 1).to(config.device)
 
-    def f_function(self, t):
+    def f_function(self, t, lambda_param, u):
         # Incomplete Physics Model: du/dt = f(t)
         # 這裡只返回 f(t)，不包含 lambda * u * (1-u)
         return torch.sin(2 * math.pi * t) 
@@ -93,6 +93,15 @@ class Pedagogical(BasePinns):
             print(f"[INFO] Finetuned model loaded from {checkpoint_path}")
         except Exception as e:
             print(f"[ERROR] Error loading finetuned model: {e}")
+
+class PedagogicalBaselineComaprison(Pedagogical):
+    def __init__(self, config):
+        super().__init__(config)
+    
+    def f_function(self, t, lambda_param, u):
+        # Incomplete Physics Model: du/dt = f(t)
+        # baseline 論文這裡使用 f(t)+lambda cos(u)
+        return torch.sin(2 * math.pi * t) + lambda_param * torch.cos(u)        
 
 class Corrector(BaseCorrector):
     def __init__(self, config):
