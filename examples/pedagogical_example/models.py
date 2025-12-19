@@ -44,7 +44,7 @@ class Pedagogical(BasePinns):
             create_graph=True, retain_graph=True
         )[0]
 
-        f_t = self.f_function(t).to(device)
+        f_t = self.f_function(t, self.lam, u).to(device)
 
         # 根據是否使用 Corrector 決定 Residual 的定義
         if corrector is None:
