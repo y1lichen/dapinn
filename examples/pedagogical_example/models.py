@@ -94,15 +94,6 @@ class Pedagogical(BasePinns):
         except Exception as e:
             print(f"[ERROR] Error loading finetuned model: {e}")
 
-class PedagogicalBaselineComaprison(Pedagogical):
-    def __init__(self, config):
-        super().__init__(config)
-    
-    def f_function(self, t, lambda_param, u):
-        # Incomplete Physics Model: du/dt = f(t)
-        # baseline 論文這裡使用 f(t)+lambda cos(u)
-        return torch.sin(2 * math.pi * t) + lambda_param * torch.cos(u)        
-
 class Corrector(BaseCorrector):
     def __init__(self, config):
         super().__init__(config)
