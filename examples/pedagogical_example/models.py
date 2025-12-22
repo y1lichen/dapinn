@@ -3,6 +3,7 @@ import torch.nn as nn
 from dapinns.models import BasePinns, BaseCorrector
 import os
 import math
+from dapinns.samplers import LHSSampler
 
 class Pedagogical(BasePinns):
     def __init__(self, config):
@@ -12,12 +13,17 @@ class Pedagogical(BasePinns):
         p = config.system_pedagogical.system_params
         self.lam = p["lambda"]
         self.u0 = torch.tensor([[p["u0"]]], dtype=torch.float32).to(config.device)
-
+        self.lhs_sampling = False
         # Collocation points for Physics Loss
         # 使用更多的點來確保物理約束在整個域內成立
-        T = p["T"]
-        self.t_col = torch.linspace(0, T, 1000).reshape(-1, 1).to(config.device)
-
+        if not self.lhs_sampling:
+            T = p["T"]
+            self.t_col = torch.linspace(0, T, 1000).reshape(-1, 1).to(config.device)
+        else:
+            # 產生物理配點 t_col (LHS)
+            self.lhs_sampler = LHSSampler(config, sample_size=1000)
+            self.t_col = self.lhs_sampler.generate_data_1d((0, p["T"]), device=config.device)
+            self.t_col.requires_grad = True # 確保物理損失可以計算導數
     def f_function(self, t, lambda_param, u):
         # Incomplete Physics Model: du/dt = f(t)
         # 這裡只返回 f(t)，不包含 lambda * u * (1-u)
