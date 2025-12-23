@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from scipy.stats import qmc
+
 
 # For ODEs (e.g., simple, damped harmonic oscillator)
 class UniformSampler:
@@ -93,3 +95,38 @@ class TimeSpaceRandomSampler:
         u_sample = U_flat[indices]
 
         return xyt_sample, u_sample
+    
+class LHSSampler:
+    def __init__(self, config=None, sample_size=1000):
+        self.sample_size = sample_size
+        self.seed = getattr(config, "seed", 42) if config else 42
+
+    def generate_data_1d(self, t_range, device="cpu"):
+        """
+        針對 ODE (1D) 的 LHS 抽樣
+        t_range: (t_min, t_max) 例如 (0, 1)
+        """
+        sampler = qmc.LatinHypercube(d=1, seed=self.seed)
+        sample = sampler.random(n=self.sample_size) # 產生 [0, 1) 之間的樣本
+        
+        t_min, t_max = t_range
+        t_lhs = qmc.scale(sample, t_min, t_max)
+        
+        return torch.tensor(t_lhs, dtype=torch.float32).to(device)
+
+    def generate_data_2d(self, x_range, t_range, device="cpu"):
+        """
+        針對 PDE (2D: Space-Time) 的 LHS 抽樣
+        x_range: (x_min, x_max)
+        t_range: (t_min, t_max)
+        """
+        sampler = qmc.LatinHypercube(d=2, seed=self.seed)
+        sample = sampler.random(n=self.sample_size)
+        
+        # 定義邊界並縮放
+        l_bounds = [x_range[0], t_range[0]]
+        u_bounds = [x_range[1], t_range[1]]
+        xt_lhs = qmc.scale(sample, l_bounds, u_bounds)
+        
+        # 返回 [N, 2] 的 tensor, 第一欄是 x, 第二欄是 t
+        return torch.tensor(xt_lhs, dtype=torch.float32).to(device)
