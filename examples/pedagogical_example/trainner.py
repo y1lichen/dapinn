@@ -6,7 +6,7 @@ import numpy as np
 
 from .models import Pedagogical, Corrector
 from .utils import generate_reaction_ode_dataset
-from dapinns.samplers import RandomSampler
+from dapinns.samplers import RandomSampler, LHSSampler
 from dapinns.utils import save_checkpoint
 
 # ==========================================
@@ -84,6 +84,7 @@ def finetune(config, workdir):
     t, u, f, sol = generate_reaction_ode_dataset(params=p, T=T, u0=u0, n_t=n_t)
     
     # Sampling measurements
+    
     sampler = RandomSampler(config, sample_size=config.sample_size)
     t_train, u_train = sampler.generate_data(t, u)
     t_train = t_train.to(config.device)
@@ -91,6 +92,9 @@ def finetune(config, workdir):
 
     # — 2. Load Models —
     model = Pedagogical(config).to(config.device)
+    # lhs_sampler = LHSSampler(config, sample_size=1000)
+    # t_lhs = lhs_sampler.generate_data_1d((0, p["T"]), device=config.device)
+    # model.set_collocation_points(t_lhs)
     
     # 如果是 DAPINN 模式，先加載 Pretrained weights (Learned on incomplete physics)
     # 如果是 Standard PINN (baseline)，通常從隨機初始化開始，或者也可加載

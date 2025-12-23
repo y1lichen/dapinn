@@ -48,7 +48,7 @@ def get_config():
     # -----------------------------
     # Dataset sample size
     # -----------------------------
-    config.sample_size = 50
+    config.sample_size = 15
     config.noise = 0.0
 
     # -----------------------------

@@ -39,12 +39,16 @@ def evaluate(config: ml_collections.ConfigDict, workdir: str):
     with torch.no_grad():
         u_pred = model(t_test).cpu().numpy().ravel()
 
+    # Calculate L2 Error
+    l2_error = np.linalg.norm(u_pred - u_true) / np.linalg.norm(u_true)
+    print(f"Relative L2 Error: {l2_error:.6e}")
+
     plt.figure(figsize=(10, 6))
     plt.plot(sol.t, u_true, 'k-', linewidth=2, label="Ground Truth")
     plt.plot(sol.t, u_pred, 'r--', linewidth=2, label="Prediction")
     
     title_str = "DAPINN" if config.use_corrector else "Standard PINN (Wrong Physics)"
-    plt.title(f"{title_str}: Prediction vs Truth")
+    plt.title(f"{title_str}: Prediction vs Truth (L2 Error: {l2_error:.2e})")
     plt.legend()
     plt.savefig(os.path.join(workdir, config.saving.save_dir, "prediction_comparison.png"), dpi=300)
     plt.close()
