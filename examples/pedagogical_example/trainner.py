@@ -6,7 +6,7 @@ import numpy as np
 
 from .models import Pedagogical, Corrector
 from .utils import generate_reaction_ode_dataset
-from dapinns.samplers import RandomSampler, LHSSampler
+from dapinns.samplers import RandomSampler
 from dapinns.utils import save_checkpoint
 
 # ==========================================
@@ -92,9 +92,6 @@ def finetune(config, workdir):
 
     # — 2. Load Models —
     model = Pedagogical(config).to(config.device)
-    # lhs_sampler = LHSSampler(config, sample_size=1000)
-    # t_lhs = lhs_sampler.generate_data_1d((0, p["T"]), device=config.device)
-    # model.set_collocation_points(t_lhs)
     
     # 如果是 DAPINN 模式，先加載 Pretrained weights (Learned on incomplete physics)
     # 如果是 Standard PINN (baseline)，通常從隨機初始化開始，或者也可加載
@@ -116,11 +113,11 @@ def finetune(config, workdir):
 
     # — 3. Optimizers —
     # Separate optimizers for alternating updates
-    model_optimizer = torch.optim.Adam(model.parameters(), lr=config.finetuning.lr)
+    model_optimizer = torch.optim.Adam(model.parameters(), lr=config.finetune_pinns_optim.lr)
     model.optimizer = model_optimizer # attach for save_checkpoint convenience
 
     if use_corrector:
-        corrector_optimizer = torch.optim.Adam(corrector.parameters(), lr=config.finetuning.lr)
+        corrector_optimizer = torch.optim.Adam(corrector.parameters(), lr=config.finetune_correction_optim.lr)
         corrector.optimizer = corrector_optimizer
 
     # — 4. Training Hyperparams —
@@ -211,7 +208,11 @@ def finetune(config, workdir):
             
             if use_corrector:
                 save_checkpoint({
-                    "epoch": epoch, "model_state_dict": corrector.state_dict(), "loss": total_loss.item()
+                    "epoch": epoch,
+                    "model_state_dict":
+                    corrector.state_dict(),
+                    "loss": total_loss.item(),
+                    "corrector_inputs": corr_in.detach().cpu()
                 }, corrector_dir, epoch, keep=1, name="best_corrector.pt")
 
     # — 6. LBFGS Final Polish (Optional but recommended) —
@@ -238,7 +239,12 @@ def finetune(config, workdir):
     # Save Final
     save_checkpoint({"model_state_dict": model.state_dict()}, finetune_dir, max_epochs, keep=1, name="final_model.pt")
     if use_corrector:
-        save_checkpoint({"model_state_dict": corrector.state_dict()}, corrector_dir, max_epochs, keep=1, name="final_corrector.pt")
+        _, final_corr_in = model.f_loss(corrector)
+        save_checkpoint({
+            "model_state_dict": corrector.state_dict(),
+            "corrector_inputs": final_corr_in.detach().cpu()
+            },
+            corrector_dir, max_epochs, keep=1, name="final_corrector.pt")
 
 
 def train(config, workdir):

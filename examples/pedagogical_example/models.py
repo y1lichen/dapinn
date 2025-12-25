@@ -3,6 +3,7 @@ import torch.nn as nn
 from dapinns.models import BasePinns, BaseCorrector
 import os
 import math
+from dapinns.samplers import LHSSampler
 
 
 class Pedagogical(BasePinns):
@@ -12,10 +13,16 @@ class Pedagogical(BasePinns):
 
         p = config.system_pedagogical.system_params
         self.lam = p["lambda"]
-        self.u0 = torch.tensor([[p["u0"]]], dtype=torch.float32).to(config.device) 
+        self.u0 = torch.tensor([[p["u0"]]], dtype=torch.float32).to(config.device)
+        self.use_lhs = config.lhs_sampling 
         T = p["T"]
-        self.t_col = torch.linspace(0, T, 1000).reshape(-1, 1).to(config.device)
-    
+        if not self.use_lhs:
+            self.t_col = torch.linspace(0, T, 1000).reshape(-1, 1).to(config.device)
+        else:
+            lhs_sampler = LHSSampler(config, sample_size=1000)
+            t_lhs = lhs_sampler.generate_data_1d((0, T), device=config.device)
+            self.set_collocation_points(t_lhs)
+
     def f_function(self, t, lambda_param, u):
         # Incomplete Physics Model: du/dt = f(t)
         # 這裡只返回 f(t)，不包含 lambda * u * (1-u)
