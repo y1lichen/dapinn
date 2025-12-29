@@ -34,7 +34,7 @@ def run_pysr(X, s, corrector_sr_dir):
     print(f"\n[SR] Fitting symbolic expressions to Corrector outputs...")
     # 在此處傳入變數名稱
     model.fit(X, s, variable_names=["u", "du"])
-
+    # model.fit(X, s)
     print("\n[SR] Best symbolic equation found:")
     print(model)
 

@@ -26,7 +26,7 @@ class Pedagogical(BasePinns):
     def f_function(self, t, lambda_param, u):
         # Incomplete Physics Model: du/dt = f(t)
         # 這裡只返回 f(t)，不包含 lambda * u * (1-u)
-        return torch.sin(2 * math.pi * t) 
+        return torch.sin(3 * math.pi * t) 
 
     # ----------------------------------------------------------------------
     # Data Loss (Eq 3.2 first term)
@@ -65,6 +65,7 @@ class Pedagogical(BasePinns):
             
             # Input to ADPC: s_psi(u, du, ...)
             corrections_inputs = torch.cat([u, du], dim=1)
+            # corrections_inputs = t
             s = corrector(corrections_inputs)
             
             residual = du - (f_t + s)

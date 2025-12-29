@@ -13,7 +13,7 @@ class PedagogicalBaselineComaprison(Pedagogical):
     def f_function(self, t, lambda_param, u):
         # Incomplete Physics Model: du/dt = f(t)
         # baseline 論文這裡使用 f(t)+lambda cos(u)
-        return torch.sin(2 * math.pi * t) + lambda_param * torch.cos(u)        
+        return torch.sin(3 * math.pi * t) + lambda_param * torch.cos(u)        
 
 class Corrector(BaseCorrector):
     def __init__(self, config):

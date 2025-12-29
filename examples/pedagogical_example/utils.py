@@ -13,7 +13,7 @@ import numpy as np
 def generate_reaction_ode_dataset(params, T=1.0, u0=0.0, n_t=101):
 
     lam = params['lambda']
-    f_func = lambda t: np.sin(2 * np.pi * t)
+    f_func = lambda t: np.sin(3 * np.pi * t)
 
     def ode_func(t, u):
         return f_func(t) + lam * u * (1 - u)

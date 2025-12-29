@@ -113,11 +113,11 @@ def finetune(config, workdir):
 
     # — 3. Optimizers —
     # Separate optimizers for alternating updates
-    model_optimizer = torch.optim.Adam(model.parameters(), lr=config.finetuning.lr)
+    model_optimizer = torch.optim.Adam(model.parameters(), lr=config.finetune_pinns_optim.lr)
     model.optimizer = model_optimizer # attach for save_checkpoint convenience
 
     if use_corrector:
-        corrector_optimizer = torch.optim.Adam(corrector.parameters(), lr=config.finetuning.lr)
+        corrector_optimizer = torch.optim.Adam(corrector.parameters(), lr=config.finetune_correction_optim.lr)
         corrector.optimizer = corrector_optimizer
 
     # — 4. Training Hyperparams —

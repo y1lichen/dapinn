@@ -100,7 +100,9 @@ def finetune(config, workdir):
         model.load_pretrained_model(pretrained_path)
 
     model.train()
-
+    # If I to freeze the model......
+    # for p in model.parameters():
+    #     p.requires_grad = False
     # Setup Corrector
     use_corrector = config.use_corrector
     if use_corrector:

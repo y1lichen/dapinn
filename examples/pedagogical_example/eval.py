@@ -103,7 +103,7 @@ def evaluate_finetuned_pinns(config: ml_collections.ConfigDict, workdir: str):
 
     # ----- plot f -----
     plt.figure(figsize=(8, 5))
-    plt.plot(sol.t, np.sin(2 * np.pi * sol.t), 'k-', label="True f(t)")
+    plt.plot(sol.t, np.sin(3 * np.pi * sol.t), 'k-', label="True f(t)")
     plt.plot(sol.t, f_pred, 'b--', label="Predicted f(t)")
     plt.title("Prediction of f(t)")
     plt.legend()
