@@ -6,31 +6,14 @@ set -euo pipefail  # stop on error
 # If workdir not provided, default to current directory
 WORKDIR="${1:-.}"
 
-export WANDB_MODE=offline
+# export WANDB_MODE=offline/
 
 # Define output directories to keep results separate
-BASELINE_DIR="results/pedagogical/baseline"
 DAPINN_DIR="results/pedagogical/dapinn"
-
-echo "============================================================"
-echo " EXPERIMENT 1: Baseline (Standard PINN)"
-echo " Goal: Show failure when model assumes du/dt=f(t) only"
-echo " Output: ${WORKDIR}/${BASELINE_DIR}"
-echo "============================================================"
-
-# Baseline: No corrector, No pretrain needed, Just finetune on data
-python -m examples.pedagogical_example.main \
-    --mode=train \
-    --use_corrector=False \
-    --run_pretrain=False \
-    --run_finetune=True \
-    --load_pretrained=False \
-    --save_subdir="${BASELINE_DIR}" \
-    --workdir="${WORKDIR}"
 
 echo ""
 echo "============================================================"
-echo " EXPERIMENT 2: DAPINN (With Corrector)"
+echo " DAPINN (With Corrector)"
 echo " Goal: Discover missing reaction term lambda*u(1-u)"
 echo " Output: ${WORKDIR}/${DAPINN_DIR}"
 echo "============================================================"
@@ -62,13 +45,6 @@ echo ""
 echo "============================================================"
 echo " EVALUATION "
 echo "============================================================"
-
-echo ">>> Evaluating Baseline..."
-python -m examples.pedagogical_example.main \
-    --mode=eval \
-    --use_corrector=False \
-    --save_subdir="${BASELINE_DIR}" \
-    --workdir="${WORKDIR}"
 
 echo ">>> Evaluating DAPINN..."
 python -m examples.pedagogical_example.main \
