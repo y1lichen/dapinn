@@ -1,0 +1,3 @@
+# Linear viscoelasticity
+
+- 線性粘彈性（Linear Viscoelasticity）：Boltzmann 遺傳模型這是研究材料記憶效應最經典的例子。物體受到的應力 $\sigma(t)$ 取決於應變 $\epsilon$ 的整個歷史演化，而非僅僅是當下的形變。物理式子：$$\sigma(t) = G(0)\epsilon(t) + \int_{0}^{t} \dot{G}(t - \tau) \epsilon(\tau) d\tau$$或者更常見的應力鬆弛形式：$$\sigma(t) = \int_{0}^{t} G(t - \tau) \frac{d\epsilon(\tau)}{d\tau} d\tau$$這裡的積分核 $G(t-\tau)$ 描述了材料如何「記住」過去的受力。實驗設計：假設正確物理是上述卷積積分，但 DAPINN 錯誤假設為理想彈性體（$\sigma = E\epsilon$）或標準粘彈性模型（$\sigma = E\epsilon + \eta \dot{\epsilon}$）。
