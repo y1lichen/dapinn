@@ -8,6 +8,7 @@ import re
 import pandas as pd
 from . import trainner
 
+
 # 1. 嚴格處理 Julia 與 PyTorch 的衝突
 warnings.filterwarnings("ignore", message="torch was imported before juliacall")
 warnings.filterwarnings("ignore", message="juliacall module already imported")
@@ -15,7 +16,7 @@ warnings.filterwarnings("ignore", message="juliacall module already imported")
 # 強制禁用某些信號處理，減少 Segmentation Fault 機率
 os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = "yes"
 
-from examples.pedagogical_example.models import Corrector
+from examples.pedagogical_baseline_comparison.models import Corrector
 
 def run_pysr(X, s, corrector_sr_dir):
     """在獨立的子進程中執行，確保 Julia 環境乾淨"""
@@ -24,17 +25,19 @@ def run_pysr(X, s, corrector_sr_dir):
     
     # 修正：FutureWarning 提到 variable_names 應該在 fit 時傳入
     model = PySRRegressor(
-        niterations=15,
+        niterations=50,
         binary_operators=["+", "-", "*", "/"],
-        # unary_operators=["abs"],
-        population_size=50,
-        maxsize=10,
+        unary_operators=["cos", "sin"],
+        population_size=100,
+        maxsize=15,
+        elementwise_loss="L2DistLoss()",
         progress=True,
         output_directory=corrector_sr_dir,
     )
 
     print(f"\n[SR] Fitting symbolic expressions to Corrector outputs...")
     # 在此處傳入變數名稱
+    
     model.fit(X, s, variable_names=["u", "du"])
     # model.fit(X, s)
     print("\n[SR] Best symbolic equation found:")
@@ -120,7 +123,7 @@ def parse_pysr_results(sr_dir, target_coeff):
         
     return is_struct_match, None
 
-def generate_discrepancy_table(config, workdir, sample_sizes=[30, 50, 100, 200, 500], num_trials=10):
+def generate_discrepancy_table(config, workdir, sample_sizes=[50, 100, 200, 500, 1000], num_trials=10):
     """
     執行完整實驗流程並生成 Table 3 格式。
     """

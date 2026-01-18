@@ -4,7 +4,7 @@ from absl import app
 from absl import flags
 from ml_collections import config_flags
 
-from examples.pedagogical_baseline_comparison import trainner, eval
+from examples.pedagogical_baseline_comparison import trainner, eval, sr
 
 FLAGS = flags.FLAGS
 
@@ -45,7 +45,7 @@ def setup_wandb_config(config):
     if config.run_finetune: tag_list.append("finetune")
     
     return ml_collections.ConfigDict({
-        "project": "DAPINNs-Pedagogical",
+        "project": "DAPINNs-Pedagogical-Baseline-Comparison",
         "name": f"{config.name}_{'DAPINN' if config.use_corrector else 'PINN'}",
         "mode": config.mode,
         "sample_size": config.sample_size,
@@ -114,6 +114,8 @@ def main(argv):
 
     elif config.mode == "eval":
         eval.evaluate(config, FLAGS.workdir)
+        sr.execute_sr(config, FLAGS.workdir)
+        # sr.generate_discrepancy_table(config, FLAGS.workdir, sample_sizes=[30, 50, 100, 200, 500, 1000], num_trials=10)
 
 
 if __name__ == "__main__":

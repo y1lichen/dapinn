@@ -40,7 +40,7 @@ def pretrain(config, workdir):
         
         # Only Physics Loss (Eq 3.1: L_f = L_ic + L_res)
         # No corrector is used in pretraining
-        loss, _ = model.f_loss(corrector=None)
+        loss, _, _, _ = model.f_loss(corrector=None)
         
         loss.backward()
         optimizer.step()
@@ -123,7 +123,7 @@ def finetune(config, workdir):
     # — 4. Training Hyperparams —
     max_epochs = config.finetuning.max_epochs
     alt_steps = config.finetuning.alt_steps  # m epochs
-    u_w, f_w = config.finetuning.u_w, config.finetuning.f_w
+    u_w, f_w, ic_w = config.finetuning.u_w, config.finetuning.f_w, config.finetuning.ic_w
     
     save_root = os.path.join(workdir, config.saving.save_dir)
     finetune_dir = os.path.join(save_root, config.saving.finetune_path)
@@ -158,10 +158,10 @@ def finetune(config, workdir):
             
             # Physics Loss (L_res)
             # If corrector exists, it is used in calculation but NOT updated here
-            f_loss, corr_in = model.f_loss(corrector)
+            f_loss, ode_loss, ic_loss, corr_in = model.f_loss(corrector)
             
             # Eq 3.2: L_total = w_u * L_u + w_f * L_res
-            total_loss = u_w * u_loss + f_w * f_loss
+            total_loss = u_w * u_loss + f_w * ode_loss + ic_w * ic_loss
             
             total_loss.backward()
             model_optimizer.step()
@@ -172,11 +172,11 @@ def finetune(config, workdir):
             
             # Physics Loss ONLY (Eq 3.3)
             # We want Corrector to minimize the PDE residual given fixed u_theta
-            f_loss, corr_in = model.f_loss(corrector)
+            f_loss, ode_loss, ic_loss, corr_in = model.f_loss(corrector)
             
             # Note: Data loss does not depend on corrector directly in this formulation,
             # so we usually only backprop f_loss or total_loss (u_loss gradient will be 0 for corrector)
-            total_loss = f_w * f_loss 
+            total_loss = f_w * ode_loss + ic_w * ic_loss
             
             total_loss.backward()
             corrector_optimizer.step()
@@ -184,7 +184,7 @@ def finetune(config, workdir):
             # Recalculate u_loss just for logging
             with torch.no_grad():
                 u_loss = model.u_loss(t_train, u_train)
-                total_loss = u_w * u_loss + f_w * f_loss
+                total_loss = u_w * u_loss + f_w * ode_loss + ic_w * ic_loss
 
         # --- Logging & Saving ---
         if getattr(config.wandb, "use_wandb", False):
@@ -208,7 +208,10 @@ def finetune(config, workdir):
             
             if use_corrector:
                 save_checkpoint({
-                    "epoch": epoch, "model_state_dict": corrector.state_dict(), "loss": total_loss.item()
+                    "epoch": epoch,
+                    "model_state_dict": corrector.state_dict(),
+                    "loss": total_loss.item(),
+                    "corrector_inputs": corr_in.detach().cpu()
                 }, corrector_dir, epoch, keep=1, name="best_corrector.pt")
 
     # — 6. LBFGS Final Polish (Optional but recommended) —
@@ -223,8 +226,8 @@ def finetune(config, workdir):
     def closure():
         lbfgs.zero_grad()
         u_loss = model.u_loss(t_train, u_train)
-        f_loss, _ = model.f_loss(corrector)
-        loss = u_w * u_loss + f_w * f_loss
+        f_loss, ode_loss, ic_loss, _ = model.f_loss(corrector)
+        loss = u_w * u_loss + f_w * ode_loss + ic_w * ic_loss
         loss.backward()
         return loss
 
@@ -235,7 +238,15 @@ def finetune(config, workdir):
     # Save Final
     save_checkpoint({"model_state_dict": model.state_dict()}, finetune_dir, max_epochs, keep=1, name="final_model.pt")
     if use_corrector:
-        save_checkpoint({"model_state_dict": corrector.state_dict()}, corrector_dir, max_epochs, keep=1, name="final_corrector.pt")
+        _, _, _, final_corr_in = model.f_loss(corrector)
+        save_checkpoint(
+            {"model_state_dict": corrector.state_dict(),
+             "corrector_inputs": final_corr_in.detach().cpu()}, 
+            corrector_dir, 
+            max_epochs, 
+            keep=1, 
+            name="final_corrector.pt"
+        )
 
 
 def train(config, workdir):

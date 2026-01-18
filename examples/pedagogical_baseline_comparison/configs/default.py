@@ -7,7 +7,7 @@ import torch
 def get_config():
     config = ml_collections.ConfigDict()
 
-    config.name = "pedagogical_default"
+    config.name = "pedagogical_baseline_comparison"
     config.mode = "train"  # train, eval
 
     # -----------------------------
@@ -97,8 +97,8 @@ def get_config():
 
     config.lhs_sampling = False
     # 補上這兩行：
-    config.finetune_pinns_optim = optimizer_config(lr=1e-8)
-    config.finetune_correction_optim = optimizer_config(lr=1e-5)
+    config.finetune_pinns_optim = optimizer_config(lr=1e-3)
+    config.finetune_correction_optim = optimizer_config(lr=1e-3)
 
     # -----------------------------
     # Training Hyperparameters
@@ -112,10 +112,12 @@ def get_config():
 
     config.finetuning = ml_collections.ConfigDict(
         {
-            "max_epochs": 6000,
+            "max_epochs": 80000,
+            # "max_epochs": 60000,
             "u_w": 100.0,
             "f_w": 1.0,
-            "alt_steps": 100,
+            "ic_w": 100.0,
+            "alt_steps": 250
         }
     )
 

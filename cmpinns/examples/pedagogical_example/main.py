@@ -3,7 +3,8 @@ import os
 from absl import app
 from absl import flags
 from ml_collections import config_flags
-from examples.pedagogical_example import trainner, eval, sr
+
+from . import trainner, eval
 
 FLAGS = flags.FLAGS
 
@@ -13,7 +14,7 @@ FLAGS = flags.FLAGS
 # Config file
 config_flags.DEFINE_config_file(
     "config",
-    "examples/pedagogical_example/configs/default.py",
+    "cmpinns/examples/pedagogical_example/configs/default.py",
     "Training configuration file.",
     lock_config=False,
 )
@@ -39,13 +40,14 @@ flags.DEFINE_bool("load_pretrained", False, "Load pre-trained weights before fin
 # WandB Config Helper
 # ------------------------------------------------------------
 def setup_wandb_config(config):
+    print("[WandB] Setting up WandB configuration...")
     tag_list = []
     if config.run_pretrain: tag_list.append("pretrain")
     if config.run_finetune: tag_list.append("finetune")
     
     return ml_collections.ConfigDict({
-        "project": "DAPINNs-Pedagogical",
-        "name": f"{config.name}_{'DAPINN' if config.use_corrector else 'PINN'}",
+        "project": "CMPINNs-Pedagogical-no_cos",
+        "name": f"{config.name}_{'CMPINN'}",
         "mode": config.mode,
         "sample_size": config.sample_size,
         "tags": tag_list,
@@ -113,8 +115,6 @@ def main(argv):
 
     elif config.mode == "eval":
         eval.evaluate(config, FLAGS.workdir)
-        sr.execute_sr(config, FLAGS.workdir)
-
 
 
 if __name__ == "__main__":

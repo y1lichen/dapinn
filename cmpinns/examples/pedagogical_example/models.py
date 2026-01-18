@@ -12,7 +12,7 @@ class PedagogicalBaselineComaprison(Pedagogical):
     def f_function(self, t, lambda_param, u):
         # 這裡定義的是物理模型中的「右式項」(f + misspecified reaction)
         # 根據 Case (B)/(C): f(t) + lambda * cos(u) [cite: 310, 311]
-        return torch.sin(3 * math.pi * t) + lambda_param * torch.cos(u)
+        return torch.sin(3 * math.pi * t)
     
     def f_loss(self, corrector=None):
         device = next(self.parameters()).device

@@ -28,13 +28,13 @@ def generate_reaction_ode_dataset(params, T=1.0, u0=0.0, n_t=101):
 
     return t, u, f, sol
 
-def generate_no_reaction_ode_dataset(params, T=1.0, u0=0.0, n_t=101):
+def generate_wrong_reaction_ode_dataset(params, T=1.0, u0=0.0, n_t=101):
 
     lam = params['lambda']
     f_func = lambda t: np.sin(3 * np.pi * t)
 
     def ode_func(t, u):
-        return f_func(t) + lam * np.cos(u)
+        return f_func(t)
 
     t_vals = torch.linspace(0, T, n_t).reshape(-1, 1)
     sol = solve_ivp(ode_func, [t_vals[0].item(), t_vals[-1].item()],

@@ -13,6 +13,12 @@ from dapinns.utils import save_checkpoint
 # Stage 1: Pre-training (Eq 3.1)
 # ==========================================
 def pretrain(config, workdir):
+    wandb.init(
+        config=dict(config.wandb),
+        project=config.wandb.project,
+        name=config.wandb.name,
+        tags=["pretrain"]
+    )
     """
     Pre-trains the model on the INCOMPLETE physics only.
     Target: du/dt = f(t), with NO reaction term.
@@ -39,7 +45,7 @@ def pretrain(config, workdir):
         
         # Only Physics Loss (Eq 3.1: L_f = L_ic + L_res)
         # No corrector is used in pretraining
-        loss, _ = model.f_loss(corrector=None)
+        loss, _, _, _ = model.f_loss(corrector=None)
         
         loss.backward()
         optimizer.step()
@@ -48,8 +54,7 @@ def pretrain(config, workdir):
         if epoch % 100 == 0:
             print(f"[Pretrain] Epoch {epoch:04d} | Loss: {loss.item():.3e}")
         
-        if getattr(config.wandb, "use_wandb", False):
-            wandb.log({"pretrain_loss": loss.item()})
+        wandb.log({"pretrain_loss": loss.item()})
 
         # Save best model
         if loss.item() < best_loss:
@@ -67,15 +72,13 @@ def pretrain(config, workdir):
 # Stage 2: Fine-tuning (Eq 3.2 - 3.4)
 # ==========================================
 def finetune(config, workdir):
-    # — WandB init —
-    if getattr(config.wandb, "use_wandb", False):
-        wandb.init(
-            config=dict(config.wandb),
-            project=config.wandb.project,
-            name=config.wandb.name,
-            tags=[config.wandb.tag] if hasattr(config.wandb, "tag") else None
-        )
 
+    wandb.init(
+        config=dict(config.wandb),
+        project=config.wandb.project,
+        name=config.wandb.name,
+        tags=["finetune"]
+    )
     # — 1. Data Generation (Ground Truth) —
     p = config.system_pedagogical.system_params
     T, u0, n_t = p["T"], p["u0"], p["n_t"]
@@ -125,7 +128,7 @@ def finetune(config, workdir):
     # — 4. Training Hyperparams —
     max_epochs = config.finetuning.max_epochs
     alt_steps = config.finetuning.alt_steps  # m epochs
-    u_w, f_w = config.finetuning.u_w, config.finetuning.f_w
+    u_w, f_w, ic_w = config.finetuning.u_w, config.finetuning.f_w, config.finetuning.ic_w
     
     save_root = os.path.join(workdir, config.saving.save_dir)
     finetune_dir = os.path.join(save_root, config.saving.finetune_path)
@@ -160,10 +163,10 @@ def finetune(config, workdir):
             
             # Physics Loss (L_res)
             # If corrector exists, it is used in calculation but NOT updated here
-            f_loss, corr_in = model.f_loss(corrector)
+            f_loss, ode_loss, ic_loss, corr_in = model.f_loss(corrector)
             
             # Eq 3.2: L_total = w_u * L_u + w_f * L_res
-            total_loss = u_w * u_loss + f_w * f_loss
+            total_loss = u_w * u_loss + (f_w * ode_loss) + (ic_w * ic_loss)
             
             total_loss.backward()
             model_optimizer.step()
@@ -174,11 +177,11 @@ def finetune(config, workdir):
             
             # Physics Loss ONLY (Eq 3.3)
             # We want Corrector to minimize the PDE residual given fixed u_theta
-            f_loss, corr_in = model.f_loss(corrector)
+            f_loss, ode_loss, ic_loss, corr_in = model.f_loss(corrector)
             
             # Note: Data loss does not depend on corrector directly in this formulation,
             # so we usually only backprop f_loss or total_loss (u_loss gradient will be 0 for corrector)
-            total_loss = f_w * f_loss 
+            total_loss = (f_w * ode_loss) + (ic_w * ic_loss)
             
             total_loss.backward()
             corrector_optimizer.step()
@@ -189,12 +192,14 @@ def finetune(config, workdir):
                 total_loss = u_w * u_loss + f_w * f_loss
 
         # --- Logging & Saving ---
-        if getattr(config.wandb, "use_wandb", False):
+        if getattr(config.wandb, "use_wandb", True):
             wandb.log({
                 "u_loss": u_loss.item(), 
                 "f_loss": f_loss.item(), 
                 "total_loss": total_loss.item(),
-                "mode": "Model" if update_model else "Corrector"
+                "mode": "Model" if update_model else "Corrector",
+                "ic_loss": ic_loss.item(),
+                "ode_loss": ode_loss.item()
             })
 
         if epoch % 500 == 0 or epoch == 1:
@@ -205,7 +210,9 @@ def finetune(config, workdir):
         if total_loss.item() < best_total:
             best_total = total_loss.item()
             save_checkpoint({
-                "epoch": epoch, "model_state_dict": model.state_dict(), "loss": total_loss.item()
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "loss": total_loss.item()
             }, finetune_dir, epoch, keep=1, name="best_finetuned_model.pt")
             
             if use_corrector:
@@ -229,8 +236,8 @@ def finetune(config, workdir):
     def closure():
         lbfgs.zero_grad()
         u_loss = model.u_loss(t_train, u_train)
-        f_loss, _ = model.f_loss(corrector)
-        loss = u_w * u_loss + f_w * f_loss
+        f_loss, ode_loss, ic_loss, _ = model.f_loss(corrector)
+        loss = u_w * u_loss + f_w * ode_loss + ic_w * ic_loss
         loss.backward()
         return loss
 
@@ -241,7 +248,7 @@ def finetune(config, workdir):
     # Save Final
     save_checkpoint({"model_state_dict": model.state_dict()}, finetune_dir, max_epochs, keep=1, name="final_model.pt")
     if use_corrector:
-        _, final_corr_in = model.f_loss(corrector)
+        _, _, _, final_corr_in = model.f_loss(corrector)
         save_checkpoint({
             "model_state_dict": corrector.state_dict(),
             "corrector_inputs": final_corr_in.detach().cpu()

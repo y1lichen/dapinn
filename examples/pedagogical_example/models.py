@@ -78,7 +78,7 @@ class Pedagogical(BasePinns):
 
         total_physics_loss = ode_loss + ic_loss
 
-        return total_physics_loss, corrections_inputs
+        return total_physics_loss, ode_loss, ic_loss, corrections_inputs
 
     def load_pretrained_model(self, checkpoint_dir=None):
         # Logic strictly for loading the model trained in the Pre-training stage
