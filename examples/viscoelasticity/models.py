@@ -129,8 +129,7 @@ class MemoryDiffusionPINN(BasePinns):
         else:
             ic_loss = 0.0
 
-        total_loss = physics_loss + 1e3 * ic_loss
-        return (total_loss, correction_input)
+        return (physics_loss, ic_loss, correction_input)
     
     def load_pretrained_model(self, checkpoint_dir=None):
 

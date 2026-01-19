@@ -5,7 +5,7 @@ import ml_collections
 import torch
 
 from .models import MemoryDiffusionPINN, Corrector
-from .utils import generate_memory_diffusion_dataset, generate_pure_diffusion_dataset
+from .utils import generate_viscoelastic_dataset, generate_elastic_dataset
 from dapinns.samplers import RandomSampler
 from dapinns.utils import save_checkpoint
 
@@ -21,7 +21,7 @@ def pretrain(config: ml_collections.ConfigDict, workdir: str):
     )
 
     params = config.system_memory.system_params
-    X, y = generate_pure_diffusion_dataset(
+    X, y = generate_elastic_dataset(
         params,
         nx=params["nx"],
         nt=params["nt"]
@@ -35,13 +35,13 @@ def pretrain(config: ml_collections.ConfigDict, workdir: str):
     model.train()
 
     max_epochs = config.pretraining.max_epochs
-    u_w, f_w = config.pretraining.u_w, config.pretraining.f_w
+    u_w, f_w, ic_w = config.pretraining.u_w, config.pretraining.f_w, config.pretraining.ic_w
 
     for epoch in range(max_epochs):
         model.optimizer.zero_grad()
         u_loss = model.u_loss(X_train, y_train)
-        f_loss, _ = model.f_loss()
-        loss = u_w * u_loss + f_w * f_loss
+        f_loss, ic_loss, _ = model.f_loss()
+        loss = u_w * u_loss + f_w * f_loss + ic_w * ic_loss
         loss.backward()
         model.optimizer.step()
 
@@ -71,7 +71,7 @@ def finetune(config: ml_collections.ConfigDict, workdir: str):
     )
 
     params = config.system_memory.system_params
-    X, y, _, _ = generate_memory_diffusion_dataset(
+    X, y, _, _ = generate_viscoelastic_dataset(
         params, nx=params["nx"], nt=params["nt"], noise=params.get("noise", 0.0)
     )
 
@@ -96,7 +96,7 @@ def finetune(config: ml_collections.ConfigDict, workdir: str):
 
     max_epochs = config.finetuning.max_epochs
     alt_steps = config.finetuning.alt_steps
-    u_w, f_w = config.finetuning.u_w, config.finetuning.f_w
+    u_w, f_w, ic_w = config.finetuning.u_w, config.finetuning.f_w, config.finetuning.ic_w
     
     best_total_loss = float("inf")
     best_epoch = None
@@ -107,18 +107,19 @@ def finetune(config: ml_collections.ConfigDict, workdir: str):
         if ((epoch // alt_steps) % 2) == 0:
             model.optimizer.zero_grad()
             u_loss = model.u_loss(X_train, y_train)
-            f_loss, correction_inputs = model.f_loss(corrector)
-            loss = u_w * u_loss + f_w * f_loss
+            f_loss, ic_loss, correction_inputs = model.f_loss(corrector)
+            loss = u_w * u_loss + f_w * f_loss + ic_w * ic_loss
             loss.backward()
             model.optimizer.step()
         else:
             corrector.optimizer.zero_grad()
-            f_loss, correction_inputs = model.f_loss(corrector)
+            f_loss, ic_loss, correction_inputs = model.f_loss(corrector)
             with torch.no_grad():
                 u_loss = model.u_loss(X_train, y_train)
-            f_loss.backward()
+            phy_loss = f_w * f_loss + ic_w * ic_loss
+            phy_loss.backward()
             corrector.optimizer.step()
-            loss = u_w * u_loss + f_w * f_loss
+            loss = u_w * u_loss + f_w * f_loss + ic_w * ic_loss
 
         if (epoch + 1) % 100 == 0:
             wandb.log({"u_loss": u_loss.item(), "f_loss": f_loss.item(), "loss": loss.item()})
@@ -154,8 +155,8 @@ def finetune(config: ml_collections.ConfigDict, workdir: str):
     def closure():
         lbfgs_optimizer.zero_grad()
         u_l = model.u_loss(X_train, y_train)
-        f_l, _ = model.f_loss(corrector)
-        total_l = u_w * u_l + f_w * f_l
+        f_l, ic_l , _ = model.f_loss(corrector)
+        total_l = u_w * u_l + f_w * f_l + ic_w * ic_l
         total_l.backward()
         return total_l
 

@@ -24,9 +24,9 @@ def get_config():
         "system_name": "MemoryDiffusion",
         "system_params": {
             "D": 0.1,                 # diffusion coefficient
-            "alpha": 5.0,    # memory decay rate (for generating ground truth data)
-
-            "T": 1.0,                 # final time
+            "alpha": 3.0,    # memory decay rate (for generating ground truth data)
+            "beta": 0.3,
+            "T": 3.0,                 # final time
             "L": 1.0,                 # spatial domain [0, L]
             "nt": 200,               # temporal resolution
             "nx": 100,               # spatial resolution
@@ -46,7 +46,7 @@ def get_config():
     # ============================================================
     # Dataset sampling
     # ============================================================
-    config.pretrained_sample_size = 0      # physics-only
+    config.pretrained_sample_size = 8000      # physics-only
     config.finetune_sample_size = 2000     # sparse observation points
 
     # ============================================================
@@ -102,27 +102,30 @@ def get_config():
     # ============================================================
     # Training hyperparameters
     # ============================================================
-    def training_config(max_epochs, u_w, f_w, alt_steps=None):
+    def training_config(max_epochs, u_w, f_w, ic_w, alt_steps=None):
         return ml_collections.ConfigDict({
             "max_epochs": max_epochs,
             "u_w": u_w,
             "f_w": f_w,
+            "ic_w": ic_w,
             "alt_steps": alt_steps,
         })
 
     # Pretrain: pure diffusion
     config.pretraining = training_config(
-        max_epochs=6000,
+        max_epochs=10000,
         u_w=1.0,
-        f_w=1.0,
+        f_w=10.0,
+        ic_w=100.0
     )
 
     # Finetune: add corrector
     config.finetuning = training_config(
-        max_epochs=12000,
+        max_epochs=35000,
         u_w=1.0,
-        f_w=1e-5,
-        alt_steps=200,
+        f_w=10.0,
+        ic_w=100.0,
+        alt_steps=250,
     )
 
     # ============================================================
