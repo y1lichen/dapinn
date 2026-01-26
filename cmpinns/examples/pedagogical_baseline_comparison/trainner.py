@@ -103,7 +103,7 @@ def finetune(config, workdir):
             }, finetune_dir, epoch, keep=1, name="best_finetuned_model.pt")
             
             save_checkpoint({
-                "epoch": epoch, "model_state_dict": corrector.state_dict(), "loss": total_loss.item()
+                "epoch": epoch, "model_state_dict": corrector.state_dict(), "loss": total_loss.item(), "corrector_inputs": corr_in.detach().cpu()
             }, corrector_dir, epoch, keep=1, name="best_corrector.pt")
 
     # — 6. LBFGS Final Polish (Optional but recommended) —
@@ -128,7 +128,7 @@ def finetune(config, workdir):
 
     # Save Final
     save_checkpoint({"model_state_dict": model.state_dict()}, finetune_dir, max_epochs, keep=1, name="final_model.pt")
-    save_checkpoint({"model_state_dict": corrector.state_dict()}, corrector_dir, max_epochs, keep=1, name="final_corrector.pt")
+    # save_checkpoint({"model_state_dict": corrector.state_dict()}, corrector_dir, max_epochs, keep=1, name="final_corrector.pt")
 
 
 def train(config, workdir):

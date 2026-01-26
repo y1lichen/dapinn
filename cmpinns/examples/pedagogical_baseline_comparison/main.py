@@ -4,7 +4,7 @@ from absl import app
 from absl import flags
 from ml_collections import config_flags
 
-from . import trainner, eval
+from . import trainner, eval, sr
 
 FLAGS = flags.FLAGS
 
@@ -115,6 +115,7 @@ def main(argv):
 
     elif config.mode == "eval":
         eval.evaluate(config, FLAGS.workdir)
+        sr.execute_sr(config, FLAGS.workdir)
 
 
 if __name__ == "__main__":

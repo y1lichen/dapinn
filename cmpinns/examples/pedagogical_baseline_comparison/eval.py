@@ -163,7 +163,7 @@ def evaluate_corrector(config: ml_collections.ConfigDict, workdir: str):
 
     save_root = os.path.join(workdir, config.saving.save_dir)
     model_path = os.path.join(save_root, config.saving.finetune_path, "final_model.pt")
-    corr_path = os.path.join(save_root, config.saving.corrector_path, "final_corrector.pt")
+    corr_path = os.path.join(save_root, config.saving.corrector_path, "best_corrector.pt")
 
     if not os.path.exists(corr_path) or not os.path.exists(model_path):
         print("[SKIP] Finetuned model or corrector not found.")
