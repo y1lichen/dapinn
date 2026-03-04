@@ -7,7 +7,7 @@ WORKDIR="${1:-.}"
 
 # 實驗參數設定
 SAMPLE_SIZES=(30 50 100 200 500)
-NUM_TRIALS=30
+NUM_TRIALS=10
 BASE_SEED=42  # 基礎種子，確保實驗可重複性
 
 echo "Starting Measurement Experiments..."
