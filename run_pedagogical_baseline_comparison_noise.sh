@@ -3,7 +3,7 @@
 # --- 實驗參數設定 ---
 NOISE_LEVELS=(0.01 0.03 0.05 0.1)
 SAMPLE_SIZES=(30 100) 
-NUM_TRIALS=30         
+NUM_TRIALS=5     
 BASE_SEED=42          
 WORKDIR="${1:-.}"
 

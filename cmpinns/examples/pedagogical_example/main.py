@@ -115,7 +115,7 @@ def main(argv):
 
     elif config.mode == "eval":
         eval.evaluate(config, FLAGS.workdir)
-        sr.execute_sr(config, FLAGS.workdir)
+        # sr.execute_sr(config, FLAGS.workdir)
 
 if __name__ == "__main__":
     app.run(main)

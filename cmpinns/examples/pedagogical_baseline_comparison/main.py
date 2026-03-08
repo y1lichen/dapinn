@@ -81,8 +81,16 @@ def main(argv):
     # Optional overrides
     if FLAGS.sample_size is not None:
         config.sample_size = FLAGS.sample_size
+        if hasattr(config, "system_pedagogical"):
+            # 同步更新數據生成器的點數設定
+            config.system_pedagogical.system_params['n_t'] = FLAGS.sample_size
+
     if FLAGS.noise is not None:
         config.noise = FLAGS.noise
+        if hasattr(config, "system_pedagogical"):
+            # 同步更新數據生成器的雜訊設定
+            config.system_pedagogical.system_params['noise'] = FLAGS.noise
+            print(f"[INFO] Override System Noise: {FLAGS.noise}")
 
     # -------------------------------
     # Handle Save Paths
@@ -115,7 +123,7 @@ def main(argv):
 
     elif config.mode == "eval":
         eval.evaluate(config, FLAGS.workdir)
-        sr.execute_sr(config, FLAGS.workdir)
+        # sr.execute_sr(config, FLAGS.workdir)
 
 
 if __name__ == "__main__":
