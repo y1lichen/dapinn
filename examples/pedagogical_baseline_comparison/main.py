@@ -80,8 +80,16 @@ def main(argv):
     # Optional overrides
     if FLAGS.sample_size is not None:
         config.sample_size = FLAGS.sample_size
+        # 同步更新數據生成器讀取的 n_t 或是 sample_size 邏輯
+        if hasattr(config, "system_pedagogical"):
+            config.system_pedagogical.system_params['n_t'] = FLAGS.sample_size
+
     if FLAGS.noise is not None:
         config.noise = FLAGS.noise
+        # 確保雜訊參數被注入到物理系統的字典中
+        if hasattr(config, "system_pedagogical"):
+            config.system_pedagogical.system_params['noise'] = FLAGS.noise
+            print(f"[INFO] Override System Noise: {config.system_pedagogical.system_params['noise']}")
 
     # -------------------------------
     # Handle Save Paths
@@ -114,7 +122,7 @@ def main(argv):
 
     elif config.mode == "eval":
         eval.evaluate(config, FLAGS.workdir)
-        sr.execute_sr(config, FLAGS.workdir)
+        # sr.execute_sr(config, FLAGS.workdir)
         # sr.generate_discrepancy_table(config, FLAGS.workdir, sample_sizes=[30, 50, 100, 200, 500, 1000], num_trials=10)
 
 

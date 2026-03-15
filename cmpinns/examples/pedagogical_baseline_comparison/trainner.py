@@ -21,7 +21,7 @@ def finetune(config, workdir):
         config=dict(config.wandb),
         project=config.wandb.project,
         name=config.wandb.name,
-        tags=[config.wandb.tag] if hasattr(config.wandb, "tag") else None
+        tags=["finetune"]
     )
 
     # — 1. Data Generation (Ground Truth) —

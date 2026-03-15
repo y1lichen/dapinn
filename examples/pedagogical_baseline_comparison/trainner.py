@@ -14,6 +14,13 @@ from dapinns.utils import save_checkpoint
 # Stage 1: Pre-training (Eq 3.1)
 # ==========================================
 def pretrain(config, workdir):
+
+    wandb.init(
+        config=dict(config.wandb),
+        project=config.wandb.project,
+        name=config.wandb.name,
+        tags=["pretrain"]
+    )
     """
     Pre-trains the model on the INCOMPLETE physics only.
     NO observational data is used here.
@@ -49,8 +56,7 @@ def pretrain(config, workdir):
         if epoch % 100 == 0:
             print(f"[Pretrain] Epoch {epoch:04d} | Loss: {loss.item():.3e}")
         
-        if getattr(config.wandb, "use_wandb", False):
-            wandb.log({"pretrain_loss": loss.item()})
+        # wandb.log({"pretrain_loss": loss.item()})
 
         # Save best model
         if loss.item() < best_loss:
@@ -69,13 +75,12 @@ def pretrain(config, workdir):
 # ==========================================
 def finetune(config, workdir):
     # — WandB init —
-    if getattr(config.wandb, "use_wandb", False):
-        wandb.init(
-            config=dict(config.wandb),
-            project=config.wandb.project,
-            name=config.wandb.name,
-            tags=[config.wandb.tag] if hasattr(config.wandb, "tag") else None
-        )
+    wandb.init(
+        config=dict(config.wandb),
+        project=config.wandb.project,
+        name=config.wandb.name,
+        tags=["finetune"]
+    )
 
     # — 1. Data Generation (Ground Truth) —
     p = config.system_pedagogical.system_params
@@ -187,13 +192,12 @@ def finetune(config, workdir):
                 total_loss = u_w * u_loss + f_w * ode_loss + ic_w * ic_loss
 
         # --- Logging & Saving ---
-        if getattr(config.wandb, "use_wandb", False):
-            wandb.log({
-                "u_loss": u_loss.item(), 
-                "f_loss": f_loss.item(), 
-                "total_loss": total_loss.item(),
-                "mode": "Model" if update_model else "Corrector"
-            })
+        wandb.log({
+            "u_loss": u_loss.item(), 
+            "f_loss": f_loss.item(), 
+            "total_loss": total_loss.item(),
+            "mode": "Model" if update_model else "Corrector"
+        })
 
         if epoch % 500 == 0 or epoch == 1:
             mode_str = "Model" if update_model else "Corrector"

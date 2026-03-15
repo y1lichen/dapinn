@@ -112,7 +112,7 @@ def get_config():
 
     config.finetuning = ml_collections.ConfigDict(
         {
-            "max_epochs": 80000,
+            "max_epochs": 20000,
             # "max_epochs": 60000,
             "u_w": 100.0,
             "f_w": 1.0,

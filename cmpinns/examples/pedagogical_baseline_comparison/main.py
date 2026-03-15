@@ -46,7 +46,7 @@ def setup_wandb_config(config):
     if config.run_finetune: tag_list.append("finetune")
     
     return ml_collections.ConfigDict({
-        "project": "CMPINNs-Pedagogical",
+        "project": "CMPINNs-Pedagogical-baseline-comparison",
         "name": f"{config.name}_{'CMPINN'}",
         "mode": config.mode,
         "sample_size": config.sample_size,
