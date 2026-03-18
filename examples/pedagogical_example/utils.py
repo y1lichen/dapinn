@@ -25,7 +25,10 @@ def generate_reaction_ode_dataset(params, T=1.0, u0=0.0, n_t=101):
     t = torch.tensor(sol.t, dtype=torch.float32).reshape(-1, 1)
     u = torch.tensor(sol.y[0], dtype=torch.float32).reshape(-1, 1)
     f = torch.tensor(f_func(sol.t), dtype=torch.float32).reshape(-1, 1)
-
+    if 'noise' in params and params['noise'] > 0:
+        noise_level = params['noise']
+        # 對解 u 增加高斯雜訊
+        u += noise_level * torch.randn_like(u)
     return t, u, f, sol
 
 

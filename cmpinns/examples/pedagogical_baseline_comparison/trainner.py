@@ -32,8 +32,8 @@ def finetune(config, workdir):
     t, u, f, sol = generate_reaction_ode_dataset(params=p, T=T, u0=u0, n_t=n_t)
     
     # Sampling measurements
-    # sampler = RandomSampler(config, sample_size=config.sample_size)
-    sampler = UniformSampler(sample_size=config.sample_size)
+    sampler = RandomSampler(config, sample_size=config.sample_size)
+    # sampler = UniformSampler(sample_size=config.sample_size)
     t_train, u_train = sampler.generate_data(t, u)
     
     t_train = t_train.to(config.device)

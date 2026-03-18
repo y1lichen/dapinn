@@ -60,8 +60,8 @@ def get_config():
             "gamma": gamma
         })
     
-    config.pretrain_optim = optimizer_config(lr=0.01, optimizer="Adam", scheduler="Exp", gamma=0.9)
-    config.finetune_pinns_optim = optimizer_config(lr=0.01, optimizer="Adam", scheduler="Exp", gamma=0.9)
+    config.pretrain_optim = optimizer_config(lr=0.001, optimizer="Adam", scheduler="Exp", gamma=0.9)
+    config.finetune_pinns_optim = optimizer_config(lr=0.001, optimizer="Adam", scheduler="Exp", gamma=0.9)
     config.finetune_correction_optim = optimizer_config(lr=0.001, optimizer="Adam", scheduler="Exp", gamma=0.9)
 
     # Hyperparameter
@@ -73,8 +73,8 @@ def get_config():
             "alt_steps": alt_steps,
         })
 
-    config.pretraining = training_config(max_epochs=300, u_w=1.0, f_w=1.0)
-    config.finetuning = training_config(max_epochs=6000, u_w=1.0, f_w=1e-5, alt_steps=150)
+    config.pretraining = training_config(max_epochs=100000, u_w=1000.0, f_w=1.0)
+    config.finetuning = training_config(max_epochs=200000, u_w=100.0, f_w=1, alt_steps=250)
     
     # Model paths
     config.pretrained_model_name = "pretrained_model.pt" 

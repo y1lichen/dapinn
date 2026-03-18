@@ -7,7 +7,7 @@ import torch
 def get_config():
     config = ml_collections.ConfigDict()
 
-    config.name = "cmpinn_pedagogical_default"
+    config.name = "pedagogical_default"
     config.mode = "train"  # train, eval
 
     # -----------------------------
@@ -25,7 +25,7 @@ def get_config():
     # Device: CUDA > MPS > CPU
     # -----------------------------
     if torch.cuda.is_available():
-        device = "cuda:1"
+        device = "cuda:0"
     elif torch.backends.mps.is_available():
         device = "mps"
     else:
@@ -42,9 +42,10 @@ def get_config():
             "system_params": {
                 # "lambda": 0.2,
                 "lambda": 1.5,
-                "u0": 0.0,
+                "u0": 0,
                 "T": 1.0,
                 "n_t": 101,
+                "noise": 0.01,  # noise level [0.01, 0.03, 0.05, 0.1]
             },
         }
     )
@@ -52,8 +53,8 @@ def get_config():
     # -----------------------------
     # Dataset sample size
     # -----------------------------
-    config.sample_size = 30
-    config.noise = 0.0
+    config.sample_size = 101
+    # config.noise = 0.0
 
     # -----------------------------
     # Model architectures
@@ -76,7 +77,7 @@ def get_config():
             "arch_name": "Mlp",
             "num_layers": 2,
             "hidden_dim": 50,
-            "input_dim": 1,
+            "input_dim": 2,
             "output_dim": 1,
             "activation": "Tanh",
             "with_fourier": False,
@@ -112,11 +113,11 @@ def get_config():
 
     config.finetuning = ml_collections.ConfigDict(
         {
-            "max_epochs": 10000,
+            "max_epochs": 80000,
             "u_w": 100.0,
             "f_w": 1.0,
             "ic_w": 100.0,
-            # "alt_steps": 100,
+            "alt_steps": 250
         }
     )
 
