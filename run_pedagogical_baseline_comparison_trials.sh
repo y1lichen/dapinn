@@ -32,10 +32,10 @@ for ((i=1; i<=NUM_TRIALS; i++)); do
 
     # --- 步驟 1: Pre-training (物理引導初始化) ---
     # 此階段通常不涉及數據雜訊，但設定 seed 是好習慣
-    echo ">>> [Trial ${i}] Step 1/2: Pre-training (Physics only)..."
+    # echo ">>> [Trial ${i}] Step 1/2: Pre-training (Physics only)..."
     python -m examples.pedagogical_baseline_comparison.main \
         --mode=train \
-        --use_corrector=True \
+        --use_corrector=False \
         --run_pretrain=True \
         --run_finetune=False \
         --seed="${CURRENT_SEED}" \
